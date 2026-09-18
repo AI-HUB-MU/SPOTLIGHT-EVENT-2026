@@ -1,0 +1,48 @@
+[36mvite v8.3.0 [32mbuilding client environment for production...[36m[39m
+transforming...
+✓ 68 modules transformed.
+[31m✗[39m Build failed in 89ms
+[31merror during build:
+[31mBuild failed with 4 errors:
+
+[31m[builtin:vite-transform] [0mA 'return' statement can only be used within a function body.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/screens/AdminScreen.jsx:322:19 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m322 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249mi[0m[38;5;249mf[0m[38;5;249m [0m[38;5;249m([0m[38;5;249m![0m[38;5;249ma[0m[38;5;249mu[0m[38;5;249mt[0m[38;5;249mh[0m[38;5;249mR[0m[38;5;249me[0m[38;5;249ma[0m[38;5;249md[0m[38;5;249my[0m[38;5;249m)[0m[38;5;249m [0mreturn[38;5;249m [0m[38;5;249m<[0m[38;5;249mS[0m[38;5;249mp[0m[38;5;249mi[0m[38;5;249mn[0m[38;5;249mn[0m[38;5;249me[0m[38;5;249mr[0m[38;5;249m [0m[38;5;249ml[0m[38;5;249ma[0m[38;5;249mb[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249m=[0m[38;5;249m'[0m[38;5;249mV[0m[38;5;249mE[0m[38;5;249mR[0m[38;5;249mI[0m[38;5;249mF[0m[38;5;249mY[0m[38;5;249mI[0m[38;5;249mN[0m[38;5;249mG[0m[38;5;249m [0m[38;5;249mC[0m[38;5;249mR[0m[38;5;249mE[0m[38;5;249mD[0m[38;5;249mE[0m[38;5;249mN[0m[38;5;249mT[0m[38;5;249mI[0m[38;5;249mA[0m[38;5;249mL[0m[38;5;249mS[0m[38;5;249m…[0m[38;5;249m'[0m[38;5;249m [0m[38;5;249m/[0m[38;5;249m>[0m[38;5;249m;[0m
+ [38;5;240m    │[0m                   ───┬──  
+ [38;5;240m    │[0m                      ╰──── 
+[38;5;246m─────╯[0m
+
+[31m[builtin:vite-transform] [0mA 'return' statement can only be used within a function body.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/screens/AdminScreen.jsx:323:25 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m323 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249mi[0m[38;5;249mf[0m[38;5;249m [0m[38;5;249m([0m[38;5;249mi[0m[38;5;249ms[0m[38;5;249mA[0m[38;5;249md[0m[38;5;249mm[0m[38;5;249mi[0m[38;5;249mn[0m[38;5;249m [0m[38;5;249m![0m[38;5;249m=[0m[38;5;249m=[0m[38;5;249m [0m[38;5;249mt[0m[38;5;249mr[0m[38;5;249mu[0m[38;5;249me[0m[38;5;249m)[0m[38;5;249m [0mreturn[38;5;249m [0m[38;5;249m<[0m[38;5;249mA[0m[38;5;249md[0m[38;5;249mm[0m[38;5;249mi[0m[38;5;249mn[0m[38;5;249mL[0m[38;5;249mo[0m[38;5;249mg[0m[38;5;249mi[0m[38;5;249mn[0m[38;5;249m [0m[38;5;249m/[0m[38;5;249m>[0m[38;5;249m;[0m
+ [38;5;240m    │[0m                         ───┬──  
+ [38;5;240m    │[0m                            ╰──── 
+[38;5;246m─────╯[0m
+
+[31m[builtin:vite-transform] [0mA 'return' statement can only be used within a function body.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/screens/AdminScreen.jsx:324:1 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m324 │[0m return[38;5;249m [0m[38;5;249m([0m
+ [38;5;240m    │[0m ───┬──  
+ [38;5;240m    │[0m    ╰──── 
+[38;5;246m─────╯[0m
+
+[31m[builtin:vite-transform] [0mUnexpected token
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/screens/AdminScreen.jsx:454:1 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m454 │[0m }
+ [38;5;240m    │[0m ┬  
+ [38;5;240m    │[0m ╰── 
+[38;5;246m─────╯[0m
+[31m
+    at aggregateBindingErrorsIntoJsError (file:///C:/Users/Lenovo/Documents/spotlight/node_modules/rolldown/dist/shared/error-CGhV1ebk.mjs:48:18)
+    at unwrapBindingResult (file:///C:/Users/Lenovo/Documents/spotlight/node_modules/rolldown/dist/shared/error-CGhV1ebk.mjs:18:128)
+    at #build (file:///C:/Users/Lenovo/Documents/spotlight/node_modules/rolldown/dist/shared/rolldown-Ld3ZGGCt.mjs:133:34)
+    at async buildEnvironment (file:///C:/Users/Lenovo/Documents/spotlight/node_modules/vite/dist/node/chunks/node.js:34082:66)
+    at async Object.build (file:///C:/Users/Lenovo/Documents/spotlight/node_modules/vite/dist/node/chunks/node.js:34503:19)
+    at async Object.buildApp (file:///C:/Users/Lenovo/Documents/spotlight/node_modules/vite/dist/node/chunks/node.js:34500:153)
+    at async CAC.<anonymous> (file:///C:/Users/Lenovo/Documents/spotlight/node_modules/vite/dist/node/cli.js:780:3) {
+  errors: [Getter/Setter]
+}[39m

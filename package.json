@@ -1,0 +1,27 @@
+{
+  "name": "humans-vs-ai",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "HUMANS VS AN EVIL AI ROBOT - live college event system (React + Vite + Firestore)",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host --port 4173",
+    "deploy": "vite build && firebase deploy --only hosting,firestore:rules,firestore:indexes",
+    "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes",
+    "seed": "node tools/seed.mjs",
+    "verify:rules": "node tools/verify-rules.mjs",
+    "selftest": "node tools/selftest.mjs"
+  },
+  "dependencies": {
+    "firebase": "^12.19.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.1",
+    "vite": "^8.3.0"
+  }
+}

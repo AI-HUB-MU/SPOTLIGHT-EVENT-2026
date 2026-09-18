@@ -1,0 +1,236 @@
+rules_version = '2';
+
+// ============================================================================
+//  HUMANS vs AI  //  CONTAINMENT FIELD SECURITY RULES
+// ----------------------------------------------------------------------------
+//  Design rules for this file (do not violate them during the event):
+//   1. NEVER add a check that a legitimate judge submission could fail.
+//      A wrong-but-permissive rule costs you a later argument.
+//      A too-strict rule costs you the EVENT.
+//   2. Cheapest + most common condition goes FIRST, so non-admin reads never
+//      pay for an admins/{uid} lookup.
+//   3. Invariants checkable arithmetically (sum, bounds, monotonic counters)
+//      ARE enforced here. Those are the ones worth enforcing.
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------ helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isInt(v) {
+      return v is int;
+    }
+
+    function inRange(v, lo, hi) {
+      return v is int && v >= lo && v <= hi;
+    }
+
+    function activityIds() {
+      return ['captcha', 'consoles', 'turing', 'hearing'];
+    }
+
+    function judgeNames() {
+      return ['Sathvik', 'Vishnu', 'Shruti', 'Hasini', 'Koushik', 'Rishi'];
+    }
+
+    // True when the caller owns participants/{rollId}.
+    // Costs 2 document-access calls; only used on create paths.
+    function isOwnerOf(rollId) {
+      return isSignedIn()
+        && rollId is string
+        && exists(/databases/$(database)/documents/participants/$(rollId))
+        && get(/databases/$(database)/documents/participants/$(rollId)).data.uid == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------- admins/{uid}
+    // Bootstrap note: the FIRST admin document must be created in the Firebase
+    // console (or by an existing admin). It can never be self-created.
+    match /admins/{uid} {
+      allow get: if isSignedIn() && request.auth.uid == uid;
+      allow list, create, update, delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------- config/*
+    // config/event    -> battle tuning, freeze mode, AI creep toggle (admin only)
+    // config/judgePin -> { salt, pinHash, pinVersion }
+    //    KNOWN TRADEOFF: readable by every signed-in client, so the judge PIN is
+    //    a UI gate, not a security boundary. See RUNBOOK -> "Judge PIN".
+    match /config/{docId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------- participants/{rollId}
+    match /participants/{rollId} {
+      // No client can enumerate the participant list.
+      allow get: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+
+      allow create: if isSignedIn()
+        && rollId is string
+        && rollId.size() >= 3
+        && rollId.size() <= 20
+        && request.resource.data.rollNumber == rollId
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 40
+        && request.resource.data.totalScore == 0
+        && request.resource.data.completedCount == 0
+        && request.resource.data.passedCount == 0
+        && request.resource.data.failedCount == 0
+        && request.resource.data.status == 'ACTIVE'
+        && request.resource.data.rebindAllowed == false;
+
+      // Normal owner update: identity fields frozen, counters bounded.
+      allow update: if isSignedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.rollNumber == resource.data.rollNumber
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.rebindAllowed == false
+        && inRange(request.resource.data.totalScore, 0, 100000)
+        && inRange(request.resource.data.completedCount, 0, 8)
+        && inRange(request.resource.data.passedCount, 0, 8)
+        && inRange(request.resource.data.failedCount, 0, 8);
+
+      // Admin-sanctioned uid rebind (forgot-password recovery on a roll number).
+      allow update: if isSignedIn()
+        && resource.data.rebindAllowed == true
+        && request.resource.data.rebindAllowed == false
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.rollNumber == resource.data.rollNumber;
+
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ------------------------------------------- progress/{rollId}_{activity}
+    // SOURCE OF TRUTH for results + leaderboards.
+    // Deterministic document id + create-only  ==  duplicate submissions are
+    // impossible, and two judges submitting at the same instant cannot BOTH win.
+    match /progress/{progressId} {
+      // The first clause makes the "does it exist yet?" read legal, which is
+      // exactly what every submission transaction does before it writes.
+      allow get: if isSignedIn()
+        && !exists(/databases/$(database)/documents/progress/$(progressId));
+      allow get: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.rollId is string
+        && request.resource.data.activityId in activityIds()
+        && progressId == request.resource.data.rollId + '_' + request.resource.data.activityId
+        && isOwnerOf(request.resource.data.rollId)
+        && request.resource.data.success is bool
+        && inRange(request.resource.data.score, 0, 10000)
+        && request.resource.data.judgeId in judgeNames()
+        && request.resource.data.createdAt is timestamp;
+
+      // NOTE: `createdAt == request.time` is intentionally NOT enforced. It is a
+      // nice-to-have check with a huge blast radius if server-timestamp
+      // semantics ever differ inside a transaction.
+
+      allow update, delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------- attempts/*
+    // Turing Time anti-refresh lock: created ONCE at START, never re-created.
+    match /attempts/{attemptId} {
+      allow get: if isSignedIn()
+        && !exists(/databases/$(database)/documents/attempts/$(attemptId));
+      allow get: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.activityId == 'turing'
+        && attemptId == request.resource.data.rollId + '_turing'
+        && isOwnerOf(request.resource.data.rollId);
+
+      // Forward-only state machine: IN_PROGRESS -> ANSWERED -> EVALUATED
+      allow update: if isSignedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.status in ['ANSWERED', 'EVALUATED']
+        && resource.data.status != 'EVALUATED';
+
+      allow update, delete: if isAdmin();
+    }
+
+    // ------------------------------------------------------------ submissions/*
+    // Append-only audit log. Nothing can ever be rewritten or deleted.
+    match /submissions/{submissionId} {
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.activityId in activityIds()
+        && request.resource.data.judgeId in judgeNames()
+        && request.resource.data.success is bool
+        && inRange(request.resource.data.score, 0, 10000)
+        && isOwnerOf(request.resource.data.rollId);
+
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // ------------------------------------------------------------ eventState/*
+    // THE GLOBAL BATTLE BAR. Invariants enforced here, so no client can ever
+    // publish a bar that breaks the event's core promise:
+    //      54 <= HUMAN <= 92      8 <= AI <= 46      HUMAN + AI == 100
+    match /eventState/{docId} {
+      allow get, list: if isSignedIn();
+
+      // Self-healing: if the bar document is ever missing, the next submission
+      // re-creates it in a valid state instead of failing the whole event.
+      allow create: if isSignedIn()
+        && docId == 'main'
+        && inRange(request.resource.data.humanPower, 54, 92)
+        && inRange(request.resource.data.aiPower, 8, 46)
+        && request.resource.data.humanPower + request.resource.data.aiPower == 100;
+
+      allow update: if isSignedIn()
+        && inRange(request.resource.data.humanPower, 54, 92)
+        && inRange(request.resource.data.aiPower, 8, 46)
+        && request.resource.data.humanPower + request.resource.data.aiPower == 100
+        // exactly one submission per update; win counters strictly monotonic
+        && request.resource.data.totalSubmissions == resource.data.totalSubmissions + 1
+        && request.resource.data.humanWins + request.resource.data.aiWins
+             == resource.data.humanWins + resource.data.aiWins + 1
+        && request.resource.data.humanWins >= resource.data.humanWins
+        && request.resource.data.aiWins >= resource.data.aiWins
+        // no single write may yank the bar across the whole range
+        && request.resource.data.humanPower - resource.data.humanPower >= -18
+        && request.resource.data.humanPower - resource.data.humanPower <= 18;
+
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------- audit/*
+    // Every privileged action, with before/after values. Your live-event alibi.
+    match /audit/{docId} {
+      allow get, list: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // Anything not matched above is denied (Firestore default-deny).
+  }
+}
+

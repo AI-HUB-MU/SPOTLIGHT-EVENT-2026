@@ -1,0 +1,10 @@
+[36mvite v8.3.0 [32mbuilding client environment for production...[36m[39m
+transforming...
+✓ 76 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   1.04 kB │ gzip:   0.62 kB
+dist/assets/index-DdEi-Xp2.css   18.52 kB │ gzip:   4.60 kB
+dist/assets/index-BgZWurLn.js   973.96 kB │ gzip: 293.08 kB
+
+[32m✓ built in 317ms[39m
